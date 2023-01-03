@@ -6,6 +6,7 @@ const { findOne } = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = "CloudBookbuildbyRk";
+const fetchuser = require('../middleware/fetchuser')
 //Route:1  Create a user using:POST "/api/auth/createuser". No login required
 
 router.post('/createuser',
@@ -81,4 +82,16 @@ router.post('/login',
         }
     })
 
+//Route:3 Get loggedin User details using: POST "/api/auth/getuser". Login required
+router.post('/getuser', fetchuser,
+    async (req, res) => {
+        try {
+            userId = req.user.id;
+            const user = await User.findById(userId).select("-password");
+            res.send(user);
+        } catch (error) {
+            console.error(error.message);
+            res.status(500).send("Internal server error");
+        }
+    })
 module.exports = router;

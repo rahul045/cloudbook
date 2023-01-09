@@ -15,16 +15,17 @@ router.post('/createuser',
     body('password', "Enter password of length at least 5").isLength({ min: 5 })],
     async (req, res) => {
         //If there are errors return Bad requests and errors
-
+        let success = false;
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+
+            return res.status(400).json({ success, errors: errors.array() });
         }
         //Check whether the user with same email exists already
         try {
 
             let user = await User.findOne({ email: req.body.email });
-            if (user) { return res.status(400).json({ error: "Sorry with this email exists already" }) }
+            if (user) { return res.status(400).json({ success, error: "Sorry with this email exists already" }) }
             const salt = await bcrypt.genSalt(10);
             const secPass = await bcrypt.hash(req.body.password, salt);
             user = await User.create({
@@ -36,9 +37,10 @@ router.post('/createuser',
                 user:
                     { id: user.id }
             }
+            success = true;
             const authtoken = jwt.sign(data, JWT_SECRET);
             // console.log(token);
-            res.json({ authtoken });
+            res.json({ success, authtoken });
             // res.json(user);
         }
         catch (error) {
@@ -55,27 +57,30 @@ router.post('/login',
         body('password', "Password cannot be blank").exists()],
     async (req, res) => {
         //If there are errors return Bad requests and errors
-
+        let success = false;
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            return res.status(400).json({ success, errors: errors.array() });
         }
         const { email, password } = req.body;
         try {
             let user = await User.findOne({ email })
             if (!user) {
-                return res.status(400).json({ error: "Invalid Credentials" });
+
+                return res.status(400).json({ success, error: "Invalid Credentials" });
             }
             const passcomp = await bcrypt.compare(password, user.password);
             if (!passcomp) {
-                return res.status(400).json({ error: "Invalid Credentials" });
+
+                return res.status(400).json({ success, error: "Invalid Credentials" });
             }
             const data = {
                 user:
                     { id: user.id }
             }
+            success = true;
             const authtoken = jwt.sign(data, JWT_SECRET);
-            res.json({ authtoken });
+            res.json({ success, authtoken });
         } catch (error) {
             console.error(error.message);
             res.status(500).send("Internal server error");
